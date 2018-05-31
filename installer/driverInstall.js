@@ -298,7 +298,7 @@ var install_node_ibm_db = function(file_url) {
 
     function buildBinary(isDownloaded) 
     {
-        var buildString = "node-gyp configure build ";
+        var buildString = "node-gyp configure build --debug ";
 
         if(isDownloaded) {
             buildString = buildString + " --IS_DOWNLOADED=true";

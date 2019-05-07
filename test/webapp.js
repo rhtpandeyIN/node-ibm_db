@@ -1,6 +1,6 @@
-var ibmdb = require("../")
+var ifxnjs = require("../")
     , common = require("./common")
-    , pool = new ibmdb.Pool()
+    , pool = new ifxnjs.Pool()
     , app = require('express')()
     , cn = common.connectionString
     , requestNo = 0
@@ -8,7 +8,7 @@ var ibmdb = require("../")
     , img2 = "data/panda.jpg"
     ;
 
-//ibmdb.debug(true);
+//ifxnjs.debug(true);
 pool.init(5, cn);
 function getConnection() {
     var conn;

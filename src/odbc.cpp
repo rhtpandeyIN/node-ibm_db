@@ -1,4 +1,6 @@
 /*
+  Copyright (c) 2017, Sathyanesh Krishnan <msatyan@gmail.com>
+  Copyright (c) 2017, Javier Sagrera
   Copyright (c) 2013, Dan VerWeire <dverweire@gmail.com>
   Copyright (c) 2010, Lee Smith<notwink@gmail.com>
 
@@ -14,9 +16,6 @@
   ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
-#ifdef __MVS__
-  #define _AE_BIMODAL
-#endif
 
 #include <string.h>
 #include <v8.h>
@@ -44,8 +43,7 @@ uv_async_t ODBC::g_async;
 
 Nan::Persistent<Function> ODBC::constructor;
 
-void ODBC::Init(v8::Handle<Object> exports)
-{
+void ODBC::Init(v8::Handle<Object> exports) {
   DEBUG_PRINTF("ODBC::Init\n");
   Nan::HandleScope scope;
 
@@ -96,24 +94,21 @@ void ODBC::Init(v8::Handle<Object> exports)
   uv_mutex_init(&ODBC::g_odbcMutex);
 }
 
-ODBC::~ODBC()
-{
+ODBC::~ODBC() {
   DEBUG_PRINTF("ODBC::~ODBC\n");
   this->Free();
 }
 
-void ODBC::Free()
-{
-  DEBUG_PRINTF("ODBC::Free: m_hEnv = %X\n", m_hEnv);
+void ODBC::Free() {
+  DEBUG_PRINTF("ODBC::Free\n");
   if (m_hEnv) {
     SQLFreeHandle(SQL_HANDLE_ENV, m_hEnv);
     m_hEnv = (SQLHENV)NULL;      
   }
 }
 
-NAN_METHOD(ODBC::New)
-{
-  DEBUG_PRINTF("ODBC::New - Entry\n");
+NAN_METHOD(ODBC::New) {
+  DEBUG_PRINTF("ODBC::New\n");
   Nan::HandleScope scope;
   ODBC* dbo = new ODBC();
   
@@ -136,7 +131,6 @@ NAN_METHOD(ODBC::New)
   SQLSetEnvAttr(dbo->m_hEnv, SQL_ATTR_ODBC_VERSION, (SQLPOINTER) SQL_OV_ODBC3, SQL_IS_UINTEGER);
   
   info.GetReturnValue().Set(info.Holder());
-  DEBUG_PRINTF("ODBC::New - Exit\n");
 }
 
 //void ODBC::WatcherCallback(uv_async_t *w, int revents) {
@@ -148,9 +142,8 @@ NAN_METHOD(ODBC::New)
  * CreateConnection
  */
 
-NAN_METHOD(ODBC::CreateConnection)
-{
-  DEBUG_PRINTF("ODBC::CreateConnection - Entry\n");
+NAN_METHOD(ODBC::CreateConnection) {
+  DEBUG_PRINTF("ODBC::CreateConnection\n");
   Nan::HandleScope scope;
 
   Local<Function> cb = info[0].As<Function>();
@@ -178,24 +171,20 @@ NAN_METHOD(ODBC::CreateConnection)
   dbo->Ref();
 
   info.GetReturnValue().Set(Nan::Undefined());
-  DEBUG_PRINTF("ODBC::CreateConnection - Exit\n");
 }
 
-void ODBC::UV_CreateConnection(uv_work_t* req)
-{
-  DEBUG_PRINTF("ODBC::UV_CreateConnection - Entry\n");
+void ODBC::UV_CreateConnection(uv_work_t* req) {
+  DEBUG_PRINTF("ODBC::UV_CreateConnection\n");
   
   //get our work data
   create_connection_work_data* data = (create_connection_work_data *)(req->data);
   
   //allocate a new connection handle
   data->result = SQLAllocHandle(SQL_HANDLE_DBC, data->dbo->m_hEnv, &data->hDBC);
-  DEBUG_PRINTF("ODBC::UV_CreateConnection - Exit: hDBC = %X\n", data->hDBC);
 }
 
-void ODBC::UV_AfterCreateConnection(uv_work_t* req, int status)
-{
-  DEBUG_PRINTF("ODBC::UV_AfterCreateConnection - Entry\n");
+void ODBC::UV_AfterCreateConnection(uv_work_t* req, int status) {
+  DEBUG_PRINTF("ODBC::UV_AfterCreateConnection\n");
   Nan::HandleScope scope;
 
   create_connection_work_data* data = (create_connection_work_data *)(req->data);
@@ -232,16 +221,14 @@ void ODBC::UV_AfterCreateConnection(uv_work_t* req, int status)
 
   free(data);
   free(req);
-  DEBUG_PRINTF("ODBC::UV_AfterCreateConnection - Exit\n");
 }
 
 /*
  * CreateConnectionSync
  */
 
-NAN_METHOD(ODBC::CreateConnectionSync)
-{
-  DEBUG_PRINTF("ODBC::CreateConnectionSync - Entry\n");
+NAN_METHOD(ODBC::CreateConnectionSync) {
+  DEBUG_PRINTF("ODBC::CreateConnectionSync\n");
   Nan::HandleScope scope;
 
   ODBC* dbo = Nan::ObjectWrap::Unwrap<ODBC>(info.Holder());
@@ -261,7 +248,6 @@ NAN_METHOD(ODBC::CreateConnectionSync)
 
   Local<Object> js_result = Nan::NewInstance(Nan::New(ODBCConnection::constructor), 2, params).ToLocalChecked();
 
-  DEBUG_PRINTF("ODBC::CreateConnectionSync - Exit: hDBC = %X\n", hDBC);
   info.GetReturnValue().Set(js_result);
 }
 
@@ -269,12 +255,10 @@ NAN_METHOD(ODBC::CreateConnectionSync)
  * GetColumns
  */
 
-Column* ODBC::GetColumns(SQLHSTMT hStmt, short* colCount)
-{
+Column* ODBC::GetColumns(SQLHSTMT hStmt, short* colCount) {
   SQLRETURN ret;
   SQLSMALLINT buflen;
   SQLSMALLINT typebuflen;
-  DEBUG_PRINTF("ODBC::GetColumns - Entry\n");
 
   //always reset colCount for the current result set to 0;
   *colCount = 0; 
@@ -294,7 +278,7 @@ Column* ODBC::GetColumns(SQLHSTMT hStmt, short* colCount)
     columns[i].index = i + 1;
     colname[0] = '\0';
     buflen = 0;
-
+    
     //get the column name
     ret = SQLColAttribute( hStmt,
                            columns[i].index,
@@ -307,9 +291,9 @@ Column* ODBC::GetColumns(SQLHSTMT hStmt, short* colCount)
                            (SQLSMALLINT) MAX_FIELD_SIZE,
                            &buflen,
                            NULL);
-
+    
     //store the len attribute
-    columns[i].name_len = buflen;
+    columns[i].len = buflen;
     if(buflen> 0)
     {
         columns[i].name = new unsigned char[buflen+2];
@@ -317,44 +301,14 @@ Column* ODBC::GetColumns(SQLHSTMT hStmt, short* colCount)
         columns[i].name[buflen] = '\0';
         columns[i].name[buflen+1] = '\0';
     }
+    else  // wrk, need to be fixed at ODBC level
+    {
+        columns[i].name = new unsigned char[2];
+        columns[i].name[0] = '\0';
+        
+    }
     DEBUG_PRINTF("ODBC::GetColumns index = %i, buflen=%i\n", columns[i].index, buflen);
-
-    //get max column length
-    ret = SQLColAttribute( hStmt,
-                           columns[i].index,
-                           SQL_DESC_DISPLAY_SIZE,
-                           NULL,
-                           0,
-                           NULL,
-                           &columns[i].max_display_len);
-
-    //get column precision
-    ret = SQLColAttribute( hStmt,
-                           columns[i].index,
-                           SQL_DESC_PRECISION,
-                           NULL,
-                           0,
-                           NULL,
-                           &columns[i].precision);
-
-    //get column scale
-    ret = SQLColAttribute( hStmt,
-                           columns[i].index,
-                           SQL_DESC_SCALE,
-                           NULL,
-                           0,
-                           NULL,
-                           &columns[i].scale);
-
-    //get column length
-    ret = SQLColAttribute( hStmt,
-                           columns[i].index,
-                           SQL_DESC_LENGTH,
-                           NULL,
-                           0,
-                           NULL,
-                           &columns[i].field_len);
-
+    
     //get the column type and store it directly in column[i].type
     ret = SQLColAttribute( hStmt,
                            columns[i].index,
@@ -363,7 +317,7 @@ Column* ODBC::GetColumns(SQLHSTMT hStmt, short* colCount)
                            0,
                            NULL,
                            &columns[i].type);
-
+						   
 	columns[i].type_name = new unsigned char[(MAX_FIELD_SIZE)];
     
     //set the first byte of type_name to \0 instead of memsetting the entire buffer
@@ -377,7 +331,6 @@ Column* ODBC::GetColumns(SQLHSTMT hStmt, short* colCount)
                            &typebuflen,
                            NULL);
   }
-  DEBUG_PRINTF("ODBC::GetColumns - Exit\n");
   return columns;
 }
 
@@ -385,8 +338,7 @@ Column* ODBC::GetColumns(SQLHSTMT hStmt, short* colCount)
  * FreeColumns
  */
 
-void ODBC::FreeColumns(Column* columns, short* colCount)
-{
+void ODBC::FreeColumns(Column* columns, short* colCount) {
   for(int i = 0; i < *colCount; i++) {
       delete [] columns[i].name;
       delete [] columns[i].type_name;
@@ -409,7 +361,7 @@ Handle<Value> ODBC::GetColumnValue( SQLHSTMT hStmt, Column column,
   int ret; 
   Local<String> str;
   SQLSMALLINT ctype = SQL_C_TCHAR;
-  char * errmsg = (char *) "[node-odbc] Error in ODBC::GetColumnValue";
+  char * errmsg = (char *) "[node-ifxnjs] Error in ODBC::GetColumnValue";
 #ifdef UNICODE
   int terCharLen = 2;
 #else
@@ -458,7 +410,6 @@ Handle<Value> ODBC::GetColumnValue( SQLHSTMT hStmt, Column column,
 
     case SQL_FLOAT :
     case SQL_REAL :
-    case SQL_DECFLOAT :
     case SQL_DOUBLE : 
       {
         double value;
@@ -490,7 +441,7 @@ Handle<Value> ODBC::GetColumnValue( SQLHSTMT hStmt, Column column,
         ret = SQLGetData(hStmt, column.index, SQL_C_CHAR, 
                          &odbcTime, sizeof(odbcTime), &len);
         #else
-          #if defined(_AIX) || defined (__MVS__)
+          #ifdef _AIX
           struct tm timeInfo = {0,0,0,0,0,0,0,0,0};
           #else
           struct tm timeInfo = {0,0,0,0,0,0,0,0,0,0,0};
@@ -568,25 +519,17 @@ Handle<Value> ODBC::GetColumnValue( SQLHSTMT hStmt, Column column,
     case SQL_BIGINT :
         if((int) column.type == SQL_BIGINT)
           DEBUG_PRINTF("BIGINT DATA SELECTED\n");
-    case SQL_DBCLOB:
-        if((int) column.type == SQL_DBCLOB)
-        {
-            ctype = SQL_C_DBCHAR;
-            terCharLen = 2;
-            DEBUG_PRINTF("DBCLOB DATA SELECTED\n");
-        }
-    case SQL_BLOB :
-        if((int) column.type == SQL_BLOB)
-        {
-            terCharLen = 0;
-            ctype = SQL_C_BINARY;
-            DEBUG_PRINTF("BLOB DATA SELECTED\n");
-        }
     default :
       uint16_t * tmp_out_ptr = NULL;
       int newbufflen = 0;
       int secondGetData = 0;
       len = 0;
+	  
+	  if (column.type == SQL_LONGVARBINARY) 
+	  {
+			 ctype = SQL_C_BINARY; 
+			 terCharLen = 0; // no null terminator;
+	  } 
       ret = SQLGetData( hStmt,
                         column.index,
                         ctype,
@@ -660,17 +603,9 @@ Handle<Value> ODBC::GetColumnValue( SQLHSTMT hStmt, Column column,
         //inconsisant state.
         if(ret == SQL_INVALID_HANDLE)
         {
-#ifdef __MVS__
-        // Workaround(zOS): The ascii conversion tool has issues with %i in the following
-        // fprintf string.  Forcing it to __fprintf_a and setting _AE_BIMODAL
-          __fprintf_a(stdout, "Invalid Handle: SQLGetData retrun code = %i, stmt handle = %i:%i"
-                  ", columnType = %i, index = %i\n", ret, (long)(hStmt) >> 16 & 0x0000ffff, 
-                  (long)(hStmt) & 0x0000ffff, (int) column.type, column.index);
-#else
           fprintf(stdout, "Invalid Handle: SQLGetData retrun code = %i, stmt handle = %i:%i"
-                  ", columnType = %i, index = %i\n", ret, (long)(hStmt) >> 16 & 0x0000ffff, 
-                  (long)(hStmt) & 0x0000ffff, (int) column.type, column.index);
-#endif
+                  ", columnType = %i, index = %i\n", ret, hStmt, 
+                  hStmt, (int) column.type, column.index);
           assert(ret != SQL_INVALID_HANDLE);
         }
         Nan::ThrowError(ODBC::GetSQLError( SQL_HANDLE_STMT, hStmt, errmsg));
@@ -787,16 +722,6 @@ Handle<Value> ODBC::GetOutputParameter( Parameter prm )
     */
     case SQL_TYPE_TIME:
 		DEBUG_PRINTF("SQL_TIME SELECTED\n");
-    case SQL_DBCLOB:
-        if((int) prm.type == SQL_DBCLOB)
-        {
-            DEBUG_PRINTF("DBCLOB DATA SELECTED\n");
-        }
-    case SQL_BLOB :
-        if((int) prm.type == SQL_BLOB)
-        {
-            DEBUG_PRINTF("BLOB DATA SELECTED\n");
-        }
     default :
       DEBUG_PRINTF("ODBC::GetOutputParameter - String: paramtype=%i c_type=%i type=%i buf_len=%i len=%i val=%s\n", 
                    prm.paramtype, prm.c_type, prm.type, prm.buffer_length,
@@ -822,9 +747,8 @@ Handle<Value> ODBC::GetOutputParameter( Parameter prm )
  */
 
 Local<Object> ODBC::GetRecordTuple ( SQLHSTMT hStmt, Column* columns, 
-                                     short* colCount, uint16_t* buffer,
-                                     int bufferLength)
-{
+                                         short* colCount, uint16_t* buffer,
+                                         int bufferLength) {
   Nan::EscapableHandleScope scope;
   
   Local<Object> tuple = Nan::New<Object>();
@@ -847,9 +771,8 @@ Local<Object> ODBC::GetRecordTuple ( SQLHSTMT hStmt, Column* columns,
  */
 
 Local<Value> ODBC::GetRecordArray ( SQLHSTMT hStmt, Column* columns, 
-                                    short* colCount, uint16_t* buffer,
-                                    int bufferLength)
-{
+                                         short* colCount, uint16_t* buffer,
+                                         int bufferLength) {
   Nan::EscapableHandleScope scope;
   
   Local<Array> array = Nan::New<Array>();
@@ -871,13 +794,12 @@ Local<Value> ODBC::GetRecordArray ( SQLHSTMT hStmt, Column* columns,
  * GetParametersFromArray
  */
 
-Parameter* ODBC::GetParametersFromArray (Local<Array> values, int *paramCount)
-{
+Parameter* ODBC::GetParametersFromArray (Local<Array> values, int *paramCount) {
   DEBUG_PRINTF("ODBC::GetParametersFromArray\n");
   *paramCount = values->Length();
   
   Parameter* params = (Parameter *) malloc(*paramCount * sizeof(Parameter));
-  if(*paramCount != 0 && !params ) {
+  if( !params ) {
       Nan::LowMemoryNotification();
       Nan::ThrowError("Could not allocate enough memory for params in ODBC::GetParametersFromArray.");
       return params;
@@ -994,14 +916,10 @@ void ODBC::GetStringParam(Local<Value> value, Parameter * param, int num)
 
     if(param->c_type == SQL_C_BINARY || param->paramtype == FILE_PARAM)
     {
-        param->buffer_length = length;
+        param->buffer_length = length + 1; //null terminator added by WriteOneByte
         param->length        = length; 
     }
     param->size          = param->buffer_length;
-    if(param->c_type == SQL_C_BINARY)
-    {
-        param->buffer_length++ ;
-    }
     param->buffer        = malloc(param->buffer_length);
     MEMCHECK( param->buffer );
 
@@ -1039,7 +957,7 @@ void ODBC::GetStringParam(Local<Value> value, Parameter * param, int num)
                  SQLINTEGER        *IndicatorValue);  // 0 -> fileIndicator
     */
         param->decimals = param->buffer_length;
-        param->fileOption = SQL_FILE_READ;
+     //   param->fileOption = SQL_FILE_READ;
         param->fileIndicator = 0;
     }
 
@@ -1065,7 +983,7 @@ void ODBC::GetNullParam(Parameter * param, int num)
 void ODBC::GetInt32Param(Local<Value> value, Parameter * param, int num)
 {
     int64_t  *number = new int64_t(value->IntegerValue());
-    param->c_type = SQL_C_SBIGINT;
+    param->c_type = SQL_C_LONG;// SQL_C_SBIGINT;
     if(!param->type || (param->type == 1)) 
         param->type = SQL_BIGINT;
     param->buffer = number;
@@ -1102,24 +1020,16 @@ void ODBC::GetNumberParam(Local<Value> value, Parameter * param, int num)
 void ODBC::GetBoolParam(Local<Value> value, Parameter * param, int num)
 {
     bool *boolean    = new bool(value->BooleanValue());
-    int64_t  *number = new int64_t(0);
-    if(*boolean == true) {
-      delete number;
-      number = new int64_t(1);
-    }
-    delete boolean;
-    // Db2 stores boolean data in the form of 0 or 1 only.
-    // So overwrite the intered true or fase with 1 or 0 as bigint
-    param->c_type = SQL_C_SBIGINT;
-    if(!param->type || (param->type == 1))
-        param->type = SQL_BIGINT;
-    param->buffer = number;
-    param->length = sizeof(number);
-
+    param->c_type = SQL_C_BIT;
+    if(!param->type || (param->type == SQL_CHAR)) 
+        param->type   = SQL_BIT;
+    param->buffer = boolean;
+    param->length = 0;
+      
     DEBUG_PRINTF("ODBC::GetBoolParam: param%u : paramtype=%u, c_type=%i, "
-                 "type=%i, size=%i, decimals=%i, buffer=%lld, buffer_length=%i, length=%i\n",
+                 "type=%i, size=%i, decimals=%i, buffer_length=%i, length=%i\n",
                  num, param->paramtype, param->c_type, param->type, param->size,
-                 param->decimals, *number, param->buffer_length, param->length);
+                 param->decimals, param->buffer_length, param->length);
 }
 
 SQLRETURN ODBC::BindParameters(SQLHSTMT hSTMT, Parameter params[], int count)
@@ -1138,7 +1048,7 @@ SQLRETURN ODBC::BindParameters(SQLHSTMT hSTMT, Parameter params[], int count)
 
         if(prm.paramtype == FILE_PARAM)  // FILE
         {
-            ret = SQLBindFileToParam (
+        /*    ret = SQLBindFileToParam (
                       hSTMT,               // StatementHandle, 
                       i + 1,               // TargetType, 
                       prm.type,            // DataType, 
@@ -1147,6 +1057,7 @@ SQLRETURN ODBC::BindParameters(SQLHSTMT hSTMT, Parameter params[], int count)
                       &params[i].fileOption,     // *FileOptions,  // SQL_FILE_READ = 2
                       prm.decimals,        // MaxFileNameLength, 
                       &params[i].fileIndicator); // *IndicatorValue); // 0 
+                      */
         }
         else
             ret = SQLBindParameter(
@@ -1173,14 +1084,13 @@ SQLRETURN ODBC::BindParameters(SQLHSTMT hSTMT, Parameter params[], int count)
 
 Handle<Value> ODBC::CallbackSQLError (SQLSMALLINT handleType,
                                       SQLHANDLE handle, 
-                                      Nan::Callback* cb)
-{
+                                      Nan::Callback* cb) {
   Nan::EscapableHandleScope scope;
   
   Local<Value> objError = CallbackSQLError(
     handleType,
     handle,
-    (char *) "[node-odbc] SQL_ERROR",
+    (char *) "[node-ifxnjs] SQL_ERROR",
     cb);
   return scope.Escape(objError);
 }
@@ -1188,8 +1098,7 @@ Handle<Value> ODBC::CallbackSQLError (SQLSMALLINT handleType,
 Local<Value> ODBC::CallbackSQLError (SQLSMALLINT handleType,
                                       SQLHANDLE handle,
                                       char* message,
-                                      Nan::Callback* cb)
-{
+                                      Nan::Callback* cb) {
   Nan::EscapableHandleScope scope;
   
   Local<Value> objError = ODBC::GetSQLError(
@@ -1209,18 +1118,16 @@ Local<Value> ODBC::CallbackSQLError (SQLSMALLINT handleType,
  * GetSQLError
  */
 
-Local<Value> ODBC::GetSQLError (SQLSMALLINT handleType, SQLHANDLE handle)
-{
+Local<Value> ODBC::GetSQLError (SQLSMALLINT handleType, SQLHANDLE handle) {
   Nan::EscapableHandleScope scope;
   
   return scope.Escape(GetSQLError(
     handleType,
     handle,
-    (char *) "[node-odbc] SQL_ERROR"));
+    (char *) "[node-ifxnjs] SQL_ERROR"));
 }
 
-Local<Value> ODBC::GetSQLError (SQLSMALLINT handleType, SQLHANDLE handle, char* message)
-{
+Local<Value> ODBC::GetSQLError (SQLSMALLINT handleType, SQLHANDLE handle, char* message) {
   Nan::EscapableHandleScope scope;
   
   DEBUG_PRINTF("ODBC::GetSQLError : handleType=%i, handle=%X\n", handleType, handle);
@@ -1231,16 +1138,27 @@ Local<Value> ODBC::GetSQLError (SQLSMALLINT handleType, SQLHANDLE handle, char* 
   SQLINTEGER native;
   
   SQLSMALLINT len;
+  SQLINTEGER numfields;
   SQLRETURN ret;
   char errorSQLState[14];
   char errorMessage[SQL_MAX_MESSAGE_LENGTH];
 
+  ret = SQLGetDiagField(
+    handleType,
+    handle,
+    0,
+    SQL_DIAG_NUMBER,
+    &numfields,
+    SQL_IS_INTEGER,
+    &len);
+
   // Windows seems to define SQLINTEGER as long int, unixodbc as just int... %i should cover both
+  DEBUG_PRINTF("ODBC::GetSQLError : called SQLGetDiagField; ret=%i\n", ret);
   Local<Array> errors = Nan::New<Array>();
   objError->Set(Nan::New("errors").ToLocalChecked(), errors);
   
-  do {
-    DEBUG_PRINTF("ODBC::GetSQLError : calling SQLGetDiagRec; i=%i\n", i);
+  for (i = 0; i < numfields; i++){
+    DEBUG_PRINTF("ODBC::GetSQLError : calling SQLGetDiagRec; i=%i, numfields=%i\n", i, numfields);
     
     ret = SQLGetDiagRec(
       handleType, 
@@ -1252,28 +1170,25 @@ Local<Value> ODBC::GetSQLError (SQLSMALLINT handleType, SQLHANDLE handle, char* 
       sizeof(errorMessage),
       &len);
     
-    DEBUG_PRINTF("ODBC::GetSQLError : after SQLGetDiagRec; i=%i, ret=%i\n", i,ret);
+    DEBUG_PRINTF("ODBC::GetSQLError : after SQLGetDiagRec; i=%i\n", i);
 
     if (SQL_SUCCEEDED(ret)) {
       DEBUG_TPRINTF(SQL_T("ODBC::GetSQLError : errorMessage=%s, errorSQLState=%s\n"), errorMessage, errorSQLState);
       
       objError->Set(Nan::New("error").ToLocalChecked(), Nan::New(message).ToLocalChecked());
 #ifdef UNICODE
-      Nan::SetPrototype(objError, Exception::Error(Nan::New((uint16_t *) errorMessage).ToLocalChecked()));
+      Nan::SetPrototype(objError, Exception::Error(Nan::New((uint16_t *)errorMessage).ToLocalChecked()));
       objError->Set(Nan::New("message").ToLocalChecked(), Nan::New((uint16_t *) errorMessage).ToLocalChecked());
       objError->Set(Nan::New("state").ToLocalChecked(), Nan::New((uint16_t *) errorSQLState).ToLocalChecked());
-      objError->Set(Nan::New("sqlcode").ToLocalChecked(), Nan::New((uint16_t *) errorSQLState));
 #else
       Nan::SetPrototype(objError, Exception::Error(Nan::New(errorMessage).ToLocalChecked()));
       objError->Set(Nan::New("message").ToLocalChecked(), Nan::New(errorMessage).ToLocalChecked());
       objError->Set(Nan::New("state").ToLocalChecked(), Nan::New(errorSQLState).ToLocalChecked());
-      objError->Set(Nan::New("sqlcode").ToLocalChecked(), Nan::New(native));
 #endif
     } else {
       break;
     }
-    i++;
-  } while (ret != SQL_NO_DATA);
+  }
   
   return scope.Escape(objError);
 }
@@ -1286,8 +1201,7 @@ Local<Array> ODBC::GetAllRecordsSync (SQLHENV hENV,
                                      SQLHDBC hDBC, 
                                      SQLHSTMT hSTMT,
                                      uint16_t* buffer,
-                                     int bufferLength)
-{
+                                     int bufferLength) {
   DEBUG_PRINTF("ODBC::GetAllRecordsSync\n");
   
   Nan::EscapableHandleScope scope;
@@ -1316,7 +1230,7 @@ Local<Array> ODBC::GetAllRecordsSync (SQLHENV hENV,
       objError = ODBC::GetSQLError(
         SQL_HANDLE_STMT, 
         hSTMT,
-        (char *) "[node-odbc] Error in ODBC::GetAllRecordsSync"
+        (char *) "[node-ifxnjs] Error in ODBC::GetAllRecordsSync"
       );
       
       break;
@@ -1346,15 +1260,7 @@ Local<Array> ODBC::GetAllRecordsSync (SQLHENV hENV,
   return scope.Escape(rows);
 }
 
-extern "C" NODE_MODULE_EXPORT void NODE_MODULE_INITIALIZER(Local<Object> exports, Local<Value> module, Local<Context> context) {
-	ODBC::Init(exports);
-	ODBCResult::Init(exports);
-	ODBCConnection::Init(exports);
-	ODBCStatement::Init(exports);
-}
-
-extern "C" void init(v8::Handle<Object> exports)
-{
+extern "C" void init(v8::Handle<Object> exports) {
   ODBC::Init(exports);
   ODBCResult::Init(exports);
   ODBCConnection::Init(exports);

@@ -51,11 +51,10 @@ function doTest(file, connectionString) {
     testErr += data.toString();
   });
 
-  testCount += 1;
-
-  process.stdout.write("Running test \033[01;29m" + testCount + "\033[01;0m for [\033[01;29m" + 
-                       connectionString.title + "\033[01;0m] : " + file.replace(/\.js$/, ""));
+  process.stdout.write("Running test for [\033[01;29m" + connectionString.title + "\033[01;0m] : " + file.replace(/\.js$/, ""));
   process.stdout.write(" ... ");
+
+  testCount += 1;
 
   test.on("exit", function (code, signal) {
     clearTimeout(timer);

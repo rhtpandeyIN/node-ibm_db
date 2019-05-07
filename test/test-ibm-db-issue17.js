@@ -1,11 +1,11 @@
 /*require the ibm_db module*/
 var common = require("./common")
   , assert = require("assert")
-  , ibmdb = require("../");
+  , ifxnjs = require("../");
 
-var connString = 'DRIVER={DB2 ODBC Driver};DATABASE=SAMPLE;UID=db2admin;PWD=db2admin;HOSTNAME=localhost;port=50000;PROTOCOL=TCPIP';
+var connString = "SERVER=ids0;DATABASE=db1;HOST=127.0.0.1;SERVICE=9088;UID=informix;PWD=xxxxx;";
 
-console.log("Test program to access DB2 sample database");
+console.log("Test program to access Informix sample database");
 var testTable = 'BIGINTTEST';
 var testValues = [10205152031467301, 10205152031467303];
 
@@ -13,14 +13,14 @@ var testValues = [10205152031467301, 10205152031467303];
   param 1: The DSN string which has the details of database name to connect to, user id, password, hostname, portnumber 
   param 2: The Callback function to execute when connection attempt to the specified database is completed
 */
-ibmdb.open(common.connectionString, function(err, conn)
+ifxnjs.open(common.connectionString, function(err, conn)
 {
         if(err) {
           	console.error("error: ", err.message);
             assert.equal(err.message, null);
         } else {
 
-		console.log('Connection to DB2 machine successful');
+		console.log('Connection to Informix machine successful');
 		
         try {
 		    conn.querySync("create table " + testTable + " (COLINT BIGINT)");

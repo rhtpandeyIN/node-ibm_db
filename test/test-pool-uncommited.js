@@ -1,6 +1,6 @@
 var common = require("./common")
-	, ibmdb = require("../")
-	, pool = new ibmdb.Pool()
+	, ifxnjs = require("../")
+	, pool = new ifxnjs.Pool()
 	, cn = common.connectionString
 
 

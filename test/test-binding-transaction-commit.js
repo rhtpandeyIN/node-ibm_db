@@ -62,7 +62,8 @@ db.createConnection(function (err, conn) {
           result = conn.querySync("select * from " + common.tableName);
           data = result.fetchAllSync();
           
-          assert.deepEqual(data, [ { COLINT: 42, COLDATETIME: null, COLTEXT: null } ]);
+          assert.deepEqual(data, [ { colint: 42, coldatetime: null, coltext: null } ]);
+		  result.closeSync();
           
           finish();
         });
@@ -71,6 +72,10 @@ db.createConnection(function (err, conn) {
     
     function finish() {
       common.dropTables(conn, function (err) {
+		if (err) {
+            console.log("Error drop");
+            console.log(err);
+          }
         conn.closeSync();
         process.exit(exitCode);
       });

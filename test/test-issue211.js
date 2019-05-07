@@ -1,4 +1,4 @@
-var ibmdb = require("../")
+var ifxnjs = require("../")
     , common = require("./common")
     , assert = require("assert")
     , cn = common.connectionString;
@@ -16,8 +16,7 @@ stmt2.sql = 'SELECT COUNT(C1) FROM FINAL TABLE(UPDATE T1 SET C2=?, C3=? WHERE C1
 stmt2.params = ['Jane', 'Joan'];
 stmt2.noResults = false;
 
-ibmdb.debug(true);
-ibmdb.open(cn, function(err, conn1) {
+ifxnjs.open(cn, function(err, conn1) {
   if (err) console.log(err);
   assert.equal(err, null);
 
@@ -31,7 +30,7 @@ ibmdb.open(cn, function(err, conn1) {
   stmt0.sql = "INSERT INTO T1 VALUES (1, 'ABCDEF', 'GHIJK')";
   conn1.querySync(stmt0.sql);
   
-  ibmdb.open(cn, function(err, conn2) {
+  ifxnjs.open(cn, function(err, conn2) {
       if (err) return console.log(err);
 
       conn1.beginTransaction(function(err) {
@@ -44,10 +43,13 @@ ibmdb.open(cn, function(err, conn1) {
               conn1.query(stmt1, function(err, data) {
                 console.log('Query 1 executed');
                 if (err) {
-                  conn1.rollbackTransactionSync();
-                  console.log(err);
+					conn1.rollbackTransaction(function (err) {
+						if (err) {
+							console.log(err);
+						}
+					}); 
                 } else {
-                  conn1.commitTransactionSync();
+                  conn1.commitTransaction();
                   console.log('<<< DATA >>>:', data);
                 }
                 queryExecuted++;
@@ -56,14 +58,17 @@ ibmdb.open(cn, function(err, conn1) {
               conn2.query(stmt2, function(err, data) {
                 console.log('Query 2 executed');
                 if (err) {
-                  conn2.rollbackTransactionSync();
-                  console.log(err);
+					conn2.rollbackTransaction(function (err) {
+						if (err) {
+							console.log(err);
+						}
+					});
                 } else {
-                  conn2.commitTransactionSync();
+                  conn2.commitTransaction();
                   console.log('<<< DATA >>>:', data);
                   assert.deepEqual(data, [ { '1': 1 } ]);
+                  conn2.closeSync();
                 }
-                conn2.closeSync();
                 queryExecuted++;
               });
           });

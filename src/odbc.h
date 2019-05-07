@@ -24,7 +24,7 @@
 #include <wchar.h>
 
 #include <stdlib.h>
-#include <sqlcli1.h>
+#include <infxcli.h>
 
 using namespace v8;
 using namespace node;
@@ -38,10 +38,18 @@ using namespace node;
 #define FETCH_OBJECT 4
 #define SQL_DESTROY 9999
 
-// Workaround(zOS): Db2 supplied headers do not define SQL_SUCCEEDED
-#ifndef SQL_SUCCEEDED
-#define SQL_SUCCEEDED(rc) (((rc)&(~1))==0)
+#ifdef UNICODE
+#define _T(c) L##c
+#else
+#define _T(c) c
 #endif
+
+#ifdef UNICODE
+#define _tcslen wcslen
+#else
+#define _tcslen strlen
+#endif
+
 
 // Free Bind Parameters 
 #define FREE_PARAMS( params, count )                                 \
@@ -72,7 +80,7 @@ using namespace node;
 #define MEMCHECK( buffer )                                           \
   if (!buffer) {                                                     \
     Nan::LowMemoryNotification();                                    \
-    Nan::ThrowError( "Could not allocate enough memory in ibm_db "   \
+    Nan::ThrowError( "Could not allocate enough memory in ifxnjs "   \
                      "file " __FILE__ ":" LINENO(__LINE__) ".");     \
     return;                                                          \
   }
@@ -80,11 +88,7 @@ using namespace node;
 typedef struct {
   unsigned char *name;
   unsigned char *type_name;
-  unsigned int name_len;
-  SQLSMALLINT max_display_len;
-  SQLSMALLINT scale;
-  SQLSMALLINT precision;
-  SQLSMALLINT field_len;
+  unsigned int len;
   SQLLEN type;
   SQLUSMALLINT index;
 } Column;
@@ -264,11 +268,6 @@ struct query_request {
   if (info.Length() <= (I) || !info[I]->IsExternal())                   \
     return Nan::ThrowTypeError("Argument " #I " invalid");                \
   Local<External> VAR = Local<External>::Cast(info[I]);
-
-#define REQ_INT_ARG(I, VAR)                                             \
-  if (info.Length() <= (I) || !info[I]->IsInt32())                      \
-    return Nan::ThrowTypeError("Argument " #I " invalid");              \
-  SQLUSMALLINT VAR = (info[I]->Int32Value());
 
 #define OPT_INT_ARG(I, VAR, DEFAULT)                                    \
   SQLUSMALLINT VAR;                                                     \

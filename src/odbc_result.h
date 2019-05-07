@@ -1,4 +1,6 @@
 /*
+  Copyright (c) 2017 Sathyanesh Krishnan <msatyan@gmail.com>
+  Copyright (c) 2017 Javier Sagrera
   Copyright (c) 2013, Dan VerWeire<dverweire@gmail.com>
 
   Permission to use, copy, modify, and/or distribute this software for any
@@ -57,9 +59,6 @@ class ODBCResult : public Nan::ObjectWrap {
     static NAN_METHOD(FetchSync);
     static NAN_METHOD(FetchAllSync);
     static NAN_METHOD(GetColumnNamesSync);
-    static NAN_METHOD(GetColumnMetadataSync);
-    static NAN_METHOD(GetSQLErrorSync);
-    static NAN_METHOD(GetAffectedRowsSync);
     
     //property getter/setters
     static NAN_GETTER(FetchModeGetter);

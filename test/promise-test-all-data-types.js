@@ -1,9 +1,9 @@
 var common = require("./common")
-    , ibmdb = require("../")
+    , ifxnjs = require("../")
     , assert = require("assert")
     , cn = common.connectionString;
 
-    ibmdb.open(cn).then(function(conn) {
+    ifxnjs.open(cn).then(function(conn) {
       //conn.querySync("drop table mytab1");
       return conn;
     }, function(err) {

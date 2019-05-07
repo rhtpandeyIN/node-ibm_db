@@ -3,7 +3,7 @@ var common = require("./common")
 	, db = new odbc.Database();
 
 var insertString = "";
-var batchSize = 10;
+var batchSize = 10000;
 
 db.open(common.connectionString, function(err){ 
 	if (err) {
@@ -46,6 +46,7 @@ function dropTable() {
 function insertData() {
 	var count = 0
 		, iterations = 100
+		//, iterations = 10000
 		, time = new Date().getTime();
 	
 	for (var x = 0; x < iterations; x++) {
@@ -61,7 +62,7 @@ function insertData() {
 		
 		if (++count == iterations) {
 			var elapsed = (new Date().getTime() - time)/1000;
-            process.stdout.write("(" + batchSize * iterations + " records inserted in " + elapsed + " seconds, " + 
+            process.stdout.write("(" + batchSize * iterations + " records inserted in " + elapsed + " seconds, " +
                                  (batchSize * iterations/elapsed).toFixed(4) + " records/sec)");
 			return dropTable();
 		}
